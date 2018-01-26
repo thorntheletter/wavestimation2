@@ -1,110 +1,142 @@
 #!/usr/bin/env python3
+"""Driver script for the wavestimation experiments."""
 
 import json
-import numpy as np
+import pickle
 import os
 import sys
+import time
 import wave
+import numpy as np
 
-DEFAULT_FILENAME = "samplefiles.json"
+import algs
+import evals
+
+DEFAULT_FILENAME = "data/masterlist.json"
+VERBOSE = False
+
 
 def main():
-  if len(sys.argv) != 1:
-    samples = []
-    for arg in sys.argv[1:]:
-      try:
-        samples.extend(parse_json_file_list(arg))
-      except TypeError:
-        sample = parse_json_sample_file(arg)
-        if sample != None:
-          samples.append(sample)
+    """Strings all seperate parts together and handles file IO.
 
-  else:
-    try:
-      samples = parse_json_file_list(DEFAULT_FILENAME)
-    except (TypeError):
-      print("error: incorrect json filename list")
-      sys.exit(1)
-    # except (FileNotFoundError):
-    #   print("error: file \"" + DEFAULT_FILENAME + "\" does not exist")
-    #   sys.exit(1)
-    return samples
+    If it has no arguments, runs on a default sample JSON list file.
+    If it has one argument, it is a sample list JSON file to run it on.
+    If it has more than one argument,
+    they can be either sample or sample list JSON files.
 
+    Runs all of the algorithms in algs.algorithm_list on all of the samples,
+    then runs evals.eval_list on all of them.
+
+    Results go in a directory in the results named after the current time.
+
+    """
+    results_dir = "results/" + time.strftime("%Y-%m-%d-%H:%M:%S")
+    os.makedirs(results_dir)
+    results_dir += "/"
+
+    if len(sys.argv) != 1:
+        samples = []
+        for arg in sys.argv[1:]:
+            try:
+                samples.extend(parse_json_file_list(arg))
+            except TypeError:
+                samp = parse_json_sample_file(arg)
+                if samp is not None:
+                    samples.append(samp)
+
+    else:
+        try:
+            samples = parse_json_file_list(DEFAULT_FILENAME)
+        except TypeError:
+            print("error: incorrect json filename list")
+            sys.exit(1)
+
+    alg_res = []
+    for alg in algs.algorithm_list:
+        a_results = algs.AlgResultList(alg.__name__)
+        a_results.r_list = list(map(alg, samples))
+        alg_res.append(a_results)
+
+    for eval_alg in evals.eval_list:
+        for alg_result in alg_res:
+            alg_result.e_list.append(eval_alg(alg_result.r_list))
+
+    for alg_result in alg_res:
+        file = open(results_dir + alg_result.a_name, mode='w')
+        file.write(alg_result.__repr__())
+        file.close()
+
+    file = open(results_dir + "results.p", mode="wb")
+    pickle.dump(alg_res, file)
 
 
 def parse_json_file_list(filename):
-  if(not os.path.exists(filename)):
-    print("error: file " + filename + " does not exist")
-    sys.exit(1)
+    """Parse JSON sample list file and returns list of samples."""
+    if not os.path.exists(filename):
+        print("error: file " + filename + " does not exist")
+        sys.exit(1)
 
-  file = open(filename)
-  data = json.load(file)
-  file.close()
-  if(type(data) != list or any(map(lambda x: type(x) != str, data))):
-    raise TypeError
+    file = open(filename)
+    data = json.load(file)
+    file.close()
+    if (not isinstance(data, list) or
+            any(map(lambda x: not isinstance(x, str), data))):
+        raise TypeError
 
-  json_list = map(parse_json_sample_file, data)
+    json_list = map(parse_json_sample_file, data)
 
-  return list(filter(lambda x: x != None, json_list))
+    return list(filter(lambda x: x is not None, json_list))
 
 
 def parse_json_sample_file(filename):
-  if(not os.path.exists(filename)):
-    return None
+    """Parse individual sample JSON file and returns Sample object."""
+    if not os.path.exists(filename):
+        return None
 
-  file = open(filename)
-  data = json.load(file)
-  file.close()
+    file = open(filename)
+    data = json.load(file)
+    file.close()
 
-  if 'name' in data:
-    name = data['name']
-  else:
-    name = filename
-
-  jtarget = data['target']
-  if type(jtarget) == str: #16 bit wav, maybe check for other widths / types
-    target_file = wave.open(data['target'])
-    frames = target_file.readframes(target_file.getnframes())
-    target = np.fromstring(frames, dtype = 'int16')
-    target_file.close()
-  else: #string with numbers in it
-    target = np.array(data['target'])
-
-  components = np.zeros((len(data['components']), len(target)))
-  for i, c in enumerate(data['components']):
-    if type(c) == str:
-      component_file = wave.open(c)
-      frames = component_file.readframes(component_file.getnframes())
-      component = np.fromstring(frames, dtype = 'int16')
-      component.resize(len(target))
-      components[i] = component
-      component_file.close()
+    if 'name' in data:
+        name = data['name']
     else:
-      component = np.array(c)
-      component.resize(len(target))
-      components[i] = component
+        name = filename
 
-  return sample(name, target, components)
+    jtarget = data['target']
+    if isinstance(jtarget, str):  # 16b wav, maybe check fortypes o
+        target_file = wave.open(data['target'])
+        frames = target_file.readframes(target_file.getnframes())
+        target = np.fromstring(frames, dtype='int16')
+        target_file.close()
+    else:  # array with numbers in it.
+        target = np.array(data['target'])
+
+    components = np.zeros((len(data['components']), len(target)))
+    for i, comp in enumerate(data['components']):
+        if isinstance(comp, str):
+            component_file = wave.open(comp)
+            frames = component_file.readframes(component_file.getnframes())
+            component = np.fromstring(frames, dtype='int16')
+            component.resize(len(target))
+            components[i] = component
+            component_file.close()
+        else:
+            component = np.array(comp)
+            component.resize(len(target))
+            components[i] = component
+
+    return Sample(name, target, components)
 
 
+class Sample():
+    """Store a single sample to be operated on."""
 
-class sample():
-  def __init__(self, name, target, components):
-    self.name = name
-    self.target = target
-    self.components = components #maybe check if these are valid
+    def __init__(self, name, target, components):
+        """Initialize Sample class with sample name, target, and components."""
+        self.name = name
+        self.target = target
+        self.components = components  # maybe check if these are valid
 
-
-#untested: wav files, commandline arguments
-
-
-
-#load json lists of json
-#load samples from json files
-
-#run every algorithm on every sample
-#run evaluations on every output
-#put output into files
 
 if __name__ == '__main__':
-  main()
+    main()
