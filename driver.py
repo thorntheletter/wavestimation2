@@ -6,7 +6,7 @@ import pickle
 import os
 import sys
 import time
-import wave
+import scipy.io.wavfile
 import numpy as np
 
 import algs
@@ -103,29 +103,31 @@ def parse_json_sample_file(filename):
         name = filename
 
     jtarget = data['target']
-    if isinstance(jtarget, str):  # 16b wav, maybe check fortypes o
-        target_file = wave.open(data['target'])
-        frames = target_file.readframes(target_file.getnframes())
-        target = np.fromstring(frames, dtype='int16')
-        target_file.close()
+    if isinstance(jtarget, str):  # wav
+        _, frames = scipy.io.wavfile.read(data['target'])
+        target = collapse_channels(frames)
     else:  # array with numbers in it.
         target = np.array(data['target'])
 
     components = np.zeros((len(data['components']), len(target)))
     for i, comp in enumerate(data['components']):
         if isinstance(comp, str):
-            component_file = wave.open(comp)
-            frames = component_file.readframes(component_file.getnframes())
-            component = np.fromstring(frames, dtype='int16')
+            _, frames = scipy.o.wavfile.read(data['comp'])
+            component = collapse_channels(frames)
             component.resize(len(target))
             components[i] = component
-            component_file.close()
         else:
             component = np.array(comp)
             component.resize(len(target))
             components[i] = component
 
     return Sample(name, target, components)
+
+
+def collapse_channels(data):
+    """Convert multi-channel audio in a numpy array to mono."""
+    _, n_channels = data.shape
+    return np.sum(data // n_channels, axis=1, dtype=data.dtype)
 
 
 class Sample():
