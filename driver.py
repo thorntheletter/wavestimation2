@@ -6,7 +6,7 @@ import pickle
 import os
 import sys
 import time
-import scipy.io.wavfile
+import wave
 import numpy as np
 
 import algs
@@ -14,6 +14,7 @@ import evals
 
 DEFAULT_FILENAME = "data/masterlist.json"
 VERBOSE = False
+files_dict = {}
 
 
 def main():
@@ -47,8 +48,9 @@ def main():
     else:
         try:
             samples = parse_json_file_list(DEFAULT_FILENAME)
-        except TypeError:
+        except TypeError as e:
             print("error: incorrect json filename list")
+            print(e)
             sys.exit(1)
 
     alg_res = []
@@ -102,26 +104,38 @@ def parse_json_sample_file(filename):
     else:
         name = filename
 
-    jtarget = data['target']
-    if isinstance(jtarget, str):  # wav
-        _, frames = scipy.io.wavfile.read(data['target'])
-        target = collapse_channels(frames)
+    if isinstance(data['target'], str):  # wav
+        target = data['target']
+        if target not in files_dict.keys():
+            frames = getsounddata(target)
+            files_dict[target] = frames
     else:  # array with numbers in it.
         target = np.array(data['target'])
 
-    components = np.zeros((len(data['components']), len(target)))
+    components = []
     for i, comp in enumerate(data['components']):
         if isinstance(comp, str):
-            _, frames = scipy.o.wavfile.read(data['comp'])
-            component = collapse_channels(frames)
-            component.resize(len(target))
-            components[i] = component
+            components.append(comp)
+            if comp not in files_dict.keys():
+                frames = getsounddata(comp)
+                files_dict[target] = frames
         else:
             component = np.array(comp)
             component.resize(len(target))
             components[i] = component
 
     return Sample(name, target, components)
+
+
+def getsounddata(filename):
+    """Return numpy array with the sound data in the file."""
+    w = wave.open(filename)
+    if w.getsampwidth() != 2:
+        raise ValueError(filename + " sample width is not 16 bits")
+    frames = w.readframes(w.getnframes())
+    data = np.fromstring(frames, dtype='int16')
+    data = np.reshape(data, (-1, w.getnchannels()))
+    return collapse_channels(data)
 
 
 def collapse_channels(data):
