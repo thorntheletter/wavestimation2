@@ -1,4 +1,6 @@
 """Module for storing the estimation algorithms used in driver.py."""
+import numpy as np
+import driver
 
 
 def testo(sample):
@@ -14,12 +16,12 @@ def testo2(sample):
 algorithm_list = [testo, testo2]
 
 
-class AlgResult():
+class AlgResult(driver.Sample):
     """Stores and displays a result from an estimation algorithm."""
 
     def __init__(self, sample, a_result):
         """Initialize AlgResult with Sample and result."""
-        self.s_name = sample.name
+        self.s_name = sample.s_name
         self.target = sample.target
         self.components = sample.components
         self.a_result = a_result
@@ -31,6 +33,16 @@ class AlgResult():
         ret += "SAMPLE RESULT:\n"
         ret += self.a_result.__repr__()
         return ret
+
+    def to_signal(self):
+        """Use the components and result from to create the result signal."""
+        signal = np.ndarray(())
+        for c in self.a_result:
+            s = np.pad(self.comp_to_signal(c[0]), (c[1], 0), 'constant') * c[2]
+            if(signal.size < s.size):
+                signal = np.pad(signal, (0, s.size - signal.size), 'constant')
+            signal += s
+        return signal
 
 
 class AlgResultList():

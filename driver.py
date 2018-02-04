@@ -14,6 +14,7 @@ import evals
 
 DEFAULT_FILENAME = "data/masterlist.json"
 VERBOSE = False
+FLOAT = 'float64'
 files_dict = {}
 
 
@@ -107,27 +108,25 @@ def parse_json_sample_file(filename):
     if isinstance(data['target'], str):  # wav
         target = data['target']
         if target not in files_dict.keys():
-            frames = getsounddata(target)
+            frames = get_sound_data(target)
             files_dict[target] = frames
     else:  # array with numbers in it.
-        target = np.array(data['target'])
+        target = normalize(np.array(data['target'], dtype=FLOAT))
 
     components = []
     for i, comp in enumerate(data['components']):
         if isinstance(comp, str):
             components.append(comp)
             if comp not in files_dict.keys():
-                frames = getsounddata(comp)
+                frames = get_sound_data(comp)
                 files_dict[target] = frames
         else:
-            component = np.array(comp)
-            component.resize(len(target))
-            components[i] = component
+            components[i] = normalize(np.array(comp, dtype=FLOAT))
 
     return Sample(name, target, components)
 
 
-def getsounddata(filename):
+def get_sound_data(filename):
     """Return numpy array with the sound data in the file."""
     w = wave.open(filename)
     if w.getsampwidth() != 2:
@@ -135,13 +134,20 @@ def getsounddata(filename):
     frames = w.readframes(w.getnframes())
     data = np.fromstring(frames, dtype='int16')
     data = np.reshape(data, (-1, w.getnchannels()))
-    return collapse_channels(data)
+    return normalize(collapse_channels(data))
 
 
 def collapse_channels(data):
     """Convert multi-channel audio in a numpy array to mono."""
     _, n_channels = data.shape
-    return np.sum(data // n_channels, axis=1, dtype=data.dtype)
+    return np.sum(data / n_channels, axis=1, dtype=FLOAT)
+
+
+def normalize(vector):
+    """Normalize a vector into a unit vector."""
+    if np.linalg.norm(vector) >= 0:
+        return vector / np.linalg.norm(vector)
+    return vector
 
 
 class Sample():
@@ -149,9 +155,18 @@ class Sample():
 
     def __init__(self, name, target, components):
         """Initialize Sample class with sample name, target, and components."""
-        self.name = name
+        self.s_name = name
         self.target = target
         self.components = components  # maybe check if these are valid
+
+    def comp_to_signal(self, i):
+        """Covert index in components list to numpy array with signal."""
+        if isinstance(self.components[i], str):
+            return files_dict[self.components[i]]
+        elif isinstance(self.components[i], np.ndarray):
+            return self.components[i]
+        else:
+            raise ValueError("component does not refer to proper signal")
 
 
 if __name__ == '__main__':
