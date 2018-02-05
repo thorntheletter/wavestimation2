@@ -39,8 +39,7 @@ class AlgResult(driver.Sample):
         signal = np.ndarray(())
         for c in self.a_result:
             s = np.pad(self.comp_to_signal(c[0]), (c[1], 0), 'constant') * c[2]
-            if(signal.size < s.size):
-                signal = np.pad(signal, (0, s.size - signal.size), 'constant')
+            signal, s = driver.pad(signal, s)
             signal += s
         return signal
 

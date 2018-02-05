@@ -1,14 +1,44 @@
 """Module for storing the evaluation algorithms used in driver.py."""
+import numpy as np
+import driver
 
 
-def e_testo(result):
+def MSE_L2_time(results):
+    """Mean Square Error where error is the L2 norm."""
+    total = 0
+    res_string = "Single Sample L2 Norms:\n\n"
+    for r in results:
+        rsignal, tsignal = driver.pad(r.to_signal, r.get_target)
+        single = np.linalg.norm(tsignal - rsignal)
+        res_string += r.s_name + ": " + single
+        total += single
+    total /= len(results)
+    res_string = "total: " + total + res_string
+    return res_string
+
+
+def MSE_L1_time(results):
+    """Mean Square Error where error is the L1 norm."""
+    total = 0
+    res_string = "Single Sample L2 Norms:\n\n"
+    for r in results:
+        rsignal, tsignal = driver.pad(r.to_signal, r.get_target)
+        single = np.linalg.norm(tsignal - rsignal, ord=1)
+        res_string += r.s_name + ": " + single
+        total += single
+    total /= len(results)
+    res_string = "total: " + total + res_string
+    return res_string
+
+
+def e_testo(results):
     """Test dummy function."""
-    return EvalResult("e_testo", result.__repr__() + "eval is good")
+    return EvalResult("e_testo", results.__repr__() + "eval is good")
 
 
-def e_testo_jr(result):
+def e_testo_jr(results):
     """Test dummy function."""
-    return EvalResult("e_testo_jr", result.__repr__() + "eval is meh")
+    return EvalResult("e_testo_jr", results.__repr__() + "eval is meh")
 
 
 eval_list = [e_testo, e_testo_jr]
@@ -26,6 +56,6 @@ class EvalResult():
         """Display the EvalResult as a string."""
         ret = "EVAL ALG NAME:      "
         ret += self.e_name + "\n"
-        ret += "EVAL RESULT         \n"
+        ret += "EVAL RESULT\n"
         ret += self.e_result.__repr__()
         return ret

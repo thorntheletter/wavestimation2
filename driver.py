@@ -150,6 +150,15 @@ def normalize(vector):
     return vector
 
 
+def pad(v1, v2):
+    """Pad vector ends with 0s if they are not the smae size."""
+    if v1.size < v2.size:
+            v1 = np.pad(v1, (0, v2.size - v1.size))
+    elif v2.size < v1.size:
+        v2 = np.pad(v2, (0, v1.size - v1.size))
+    return v1, v2
+
+
 class Sample():
     """Store a single sample to be operated on."""
 
@@ -159,14 +168,22 @@ class Sample():
         self.target = target
         self.components = components  # maybe check if these are valid
 
-    def comp_to_signal(self, i):
-        """Covert index in components list to numpy array with signal."""
-        if isinstance(self.components[i], str):
-            return files_dict[self.components[i]]
-        elif isinstance(self.components[i], np.ndarray):
-            return self.components[i]
+    def get_target(self):
+        """Get target signal."""
+        return self.get_signal(self.target)
+
+    def get_signal(self, comp):
+        """Return signal from signal or filename."""
+        if isinstance(comp, str):
+            return files_dict[comp]
+        elif isinstance(comp, np.ndarray):
+            return comp
         else:
             raise ValueError("component does not refer to proper signal")
+
+    def comp_to_signal(self, i):
+        """Covert index in components list to numpy array with signal."""
+        return self.get_signal(self.components[i])
 
 
 if __name__ == '__main__':
