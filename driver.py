@@ -119,9 +119,9 @@ def parse_json_sample_file(filename):
             components.append(comp)
             if comp not in files_dict.keys():
                 frames = get_sound_data(comp)
-                files_dict[target] = frames
+                files_dict[comp] = frames
         else:
-            components[i] = normalize(np.array(comp, dtype=FLOAT))
+            components.append(normalize(np.array(comp, dtype=FLOAT)))
 
     return Sample(name, target, components)
 
@@ -153,9 +153,9 @@ def normalize(vector):
 def pad(v1, v2):
     """Pad vector ends with 0s if they are not the smae size."""
     if v1.size < v2.size:
-            v1 = np.pad(v1, (0, v2.size - v1.size))
+            v1 = np.pad(v1, (0, v2.size - v1.size), 'constant')
     elif v2.size < v1.size:
-        v2 = np.pad(v2, (0, v1.size - v1.size))
+        v2 = np.pad(v2, (0, v1.size - v1.size), 'constant')
     return v1, v2
 
 

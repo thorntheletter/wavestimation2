@@ -5,7 +5,7 @@ import driver
 
 def testo(sample):
     """Test dummy function."""
-    return AlgResult(sample, "good result")
+    return AlgResult(sample, [(0, 0, 1)])
 
 
 def testo2(sample):
@@ -13,7 +13,7 @@ def testo2(sample):
     return AlgResult(sample, "not as good result")
 
 
-algorithm_list = [testo, testo2]
+algorithm_list = [testo]
 
 
 class AlgResult(driver.Sample):
@@ -36,10 +36,10 @@ class AlgResult(driver.Sample):
 
     def to_signal(self):
         """Use the components and result from to create the result signal."""
-        signal = np.ndarray(())
+        signal = np.ndarray((0))
         for c in self.a_result:
             s = np.pad(self.comp_to_signal(c[0]), (c[1], 0), 'constant') * c[2]
-            signal, s = driver.pad(signal, s)
+            signal, s = driver.pad(signal, s,)
             signal += s
         return signal
 
