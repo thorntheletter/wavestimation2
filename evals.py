@@ -11,7 +11,7 @@ def MSE_L2_time(results):
         rsignal, tsignal = driver.pad(r.to_signal, r.get_target)
         single = np.linalg.norm(tsignal - rsignal)
         res_string += r.s_name + ": " + single
-        total += single
+        total += single ** 2
     total /= len(results)
     res_string = "total: " + total + res_string
     return res_string
@@ -20,12 +20,12 @@ def MSE_L2_time(results):
 def MSE_L1_time(results):
     """Mean Square Error where error is the L1 norm."""
     total = 0
-    res_string = "Single Sample L2 Norms:\n\n"
+    res_string = "Single Sample L1 Norms:\n\n"
     for r in results:
         rsignal, tsignal = driver.pad(r.to_signal, r.get_target)
         single = np.linalg.norm(tsignal - rsignal, ord=1)
         res_string += r.s_name + ": " + single
-        total += single
+        total += single ** 2
     total /= len(results)
     res_string = "total: " + total + res_string
     return res_string
