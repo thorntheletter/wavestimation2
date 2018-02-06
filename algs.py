@@ -1,7 +1,8 @@
 """Module for storing the estimation algorithms used in driver.py."""
-import sample
+
 import numpy as np
-import driver
+
+import sample
 
 
 def testo(sample):
@@ -40,7 +41,7 @@ class AlgResult(sample.Sample):
         signal = np.ndarray((0))
         for c in self.a_result:
             s = np.pad(self.comp_to_signal(c[0]), (c[1], 0), 'constant') * c[2]
-            signal, s = driver.pad(signal, s,)
+            signal, s = sample.pad(signal, s,)
             signal += s
         return signal
 
