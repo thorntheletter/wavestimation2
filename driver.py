@@ -9,13 +9,13 @@ import time
 import wave
 import numpy as np
 
+import sample
 import algs
 import evals
 
 DEFAULT_FILENAME = "data/masterlist.json"
 VERBOSE = False
 FLOAT = 'float64'
-files_dict = {}
 
 
 def main():
@@ -107,9 +107,9 @@ def parse_json_sample_file(filename):
 
     if isinstance(data['target'], str):  # wav
         target = data['target']
-        if target not in files_dict.keys():
+        if target not in sample.files_dict.keys():
             frames = get_sound_data(target)
-            files_dict[target] = frames
+            sample.files_dict[target] = frames
     else:  # array with numbers in it.
         target = normalize(np.array(data['target'], dtype=FLOAT))
 
@@ -117,13 +117,13 @@ def parse_json_sample_file(filename):
     for i, comp in enumerate(data['components']):
         if isinstance(comp, str):
             components.append(comp)
-            if comp not in files_dict.keys():
+            if comp not in sample.files_dict.keys():
                 frames = get_sound_data(comp)
-                files_dict[comp] = frames
+                sample.files_dict[comp] = frames
         else:
             components.append(normalize(np.array(comp, dtype=FLOAT)))
 
-    return Sample(name, target, components)
+    return sample.Sample(name, target, components)
 
 
 def get_sound_data(filename):
@@ -153,37 +153,10 @@ def normalize(vector):
 def pad(v1, v2):
     """Pad vector ends with 0s if they are not the smae size."""
     if v1.size < v2.size:
-            v1 = np.pad(v1, (0, v2.size - v1.size), 'constant')
+        v1 = np.pad(v1, (0, v2.size - v1.size), 'constant')
     elif v2.size < v1.size:
-        v2 = np.pad(v2, (0, v1.size - v1.size), 'constant')
+        v2 = np.pad(v2, (0, v1.size - v2.size), 'constant')
     return v1, v2
-
-
-class Sample():
-    """Store a single sample to be operated on."""
-
-    def __init__(self, name, target, components):
-        """Initialize Sample class with sample name, target, and components."""
-        self.s_name = name
-        self.target = target
-        self.components = components  # maybe check if these are valid
-
-    def get_target(self):
-        """Get target signal."""
-        return self.get_signal(self.target)
-
-    def get_signal(self, comp):
-        """Return signal from signal or filename."""
-        if isinstance(comp, str):
-            return files_dict[comp]
-        elif isinstance(comp, np.ndarray):
-            return comp
-        else:
-            raise ValueError("component does not refer to proper signal")
-
-    def comp_to_signal(self, i):
-        """Covert index in components list to numpy array with signal."""
-        return self.get_signal(self.components[i])
 
 
 if __name__ == '__main__':

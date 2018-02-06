@@ -1,4 +1,5 @@
 """Module for storing the evaluation algorithms used in driver.py."""
+# import sample
 import numpy as np
 import driver
 
@@ -13,7 +14,7 @@ def MSE_L2_time(results):
         res_string += r.s_name + ": " + single.__str__()
         total += single ** 2
     total /= len(results)
-    res_string = "total: " + total + res_string
+    res_string = "total: " + total.__str__() + res_string
     return res_string
 
 
@@ -22,12 +23,12 @@ def MSE_L1_time(results):
     total = 0
     res_string = "Single Sample L1 Norms:\n\n"
     for r in results:
-        rsignal, tsignal = driver.pad(r.to_signal, r.get_target)
+        rsignal, tsignal = driver.pad(r.to_signal(), r.get_target())
         single = np.linalg.norm(tsignal - rsignal, ord=1)
         res_string += r.s_name + ": " + single.__str__()
         total += single ** 2
     total /= len(results)
-    res_string = "total: " + total + res_string
+    res_string = "total: " + total.__str__() + res_string
     return res_string
 
 

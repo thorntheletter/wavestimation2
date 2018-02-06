@@ -1,4 +1,5 @@
 """Module for storing the estimation algorithms used in driver.py."""
+import sample
 import numpy as np
 import driver
 
@@ -16,7 +17,7 @@ def testo2(sample):
 algorithm_list = [testo]
 
 
-class AlgResult(driver.Sample):
+class AlgResult(sample.Sample):
     """Stores and displays a result from an estimation algorithm."""
 
     def __init__(self, sample, a_result):
