@@ -7,6 +7,7 @@ import sample
 
 # p = mp.Pool(mp.cpu_count())
 # p = mp.Pool(1)
+POOL_SIZE = int(mp.cpu_count() * .5)
 
 
 def matching_pursuit(samp):
@@ -59,7 +60,7 @@ def matching_pursuit_mp(samp):
         # for i, s in enumerate(samp.components):
         mp_args = [(R, samp, i) for i in range(len(samp.components))]
         # print(mp_args[0])
-        p = mp.Pool(mp.cpu_count())
+        p = mp.Pool(POOL_SIZE)
         processresults = p.imap(_matching_pusuit_mp_in, mp_args)
 
         maxres = max(processresults, key=lambda x: x)
@@ -74,13 +75,13 @@ def matching_pursuit_mp(samp):
 
 def _matching_pusuit_mp_in(args):
     # print("file: " + str(i))
-    R, samp, i = args
+    target, samp, i = args
     maxinn = 0
-    maxres = (-1, -1, -1)
+    #maxres = (-1, -1, -1)
     sig = samp.comp_to_signal(i)
     for offset in range(len(R)):
         f = np.pad(sig, (offset, 0), 'constant')
-        f, R = sample.pad(f, R)
+        f, R = sample.pad(f, target)
         a = np.inner(R, f)  # np.inner uses dot product
         if(np.abs(a) < maxinn):
             next
