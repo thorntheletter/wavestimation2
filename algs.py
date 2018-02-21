@@ -79,7 +79,7 @@ def _matching_pusuit_mp_in(args):
     maxinn = 0
     #maxres = (-1, -1, -1)
     sig = samp.comp_to_signal(i)
-    for offset in range(len(R)):
+    for offset in range(len(target)):
         f = np.pad(sig, (offset, 0), 'constant')
         f, R = sample.pad(f, target)
         a = np.inner(R, f)  # np.inner uses dot product
