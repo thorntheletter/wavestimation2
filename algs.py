@@ -5,17 +5,17 @@ import multiprocessing as mp
 
 import sample
 
-# p = mp.Pool(mp.cpu_count())
-# p = mp.Pool(1)
 POOL_SIZE = int(mp.cpu_count() * .5)
 
 
 def matching_pursuit(samp):
-    """Run matching pursuit, with time shifted signals in the dictionary."""
+    """
+    Run matching pursuit, with time shifted signals in the dictionary.
+
+    Abandoned because too slow, not fully tested.
+    """
     R = samp.get_target()
-    # unit = np.array([1])
     ret = []
-    # thing = True
     maxinn = 1
     while maxinn > 0:
         print("iter: " + str(len(ret)))
@@ -26,19 +26,10 @@ def matching_pursuit(samp):
             for offset in range(len(R)):
                 f = np.pad(samp.comp_to_signal(i), (offset, 0), 'constant')
                 f, R = sample.pad(f, R)
-                # print(f)
-                # print(R.dtype, f.dtype)
-                # if f.dtype != 'float64':
-                #     print(f)
                 a = np.inner(R, f)  # np.inner uses dot product
                 if(np.abs(a) < maxinn):
                     next
                 maxres = (i, offset, a)
-
-        # for offset in range(len(R)):  # unit impulse stop condition
-        #     f = np.pad(unit, (offset, 0), 'constant')
-        #     if np.abs(np.inner(R, f)) < maxinn:
-        #         return ret
 
         g = np.pad(samp.comp_to_signal(maxres[0]), (maxres[1], 0), 'constant')
         g = g * maxres[2]
@@ -49,7 +40,11 @@ def matching_pursuit(samp):
 
 
 def matching_pursuit_mp(samp):
-    """Run matching pursuit, with time shifted signals in the dictionary."""
+    """
+    Run matching pursuit, with time shifted signals in the dictionary.
+
+    Abandoned because too slow, not fully tested.
+    """
     R = samp.get_target()
     ret = []
     maxinn = 1
@@ -57,9 +52,7 @@ def matching_pursuit_mp(samp):
         print("iter: " + str(len(ret)))
         maxinn = 0
         maxres = (-1, -1, -1)
-        # for i, s in enumerate(samp.components):
         mp_args = [(R, samp, i) for i in range(len(samp.components))]
-        # print(mp_args[0])
         p = mp.Pool(POOL_SIZE)
         processresults = p.imap(_matching_pusuit_mp_in, mp_args)
 
@@ -74,10 +67,8 @@ def matching_pursuit_mp(samp):
 
 
 def _matching_pusuit_mp_in(args):
-    # print("file: " + str(i))
     target, samp, i = args
     maxinn = 0
-    #maxres = (-1, -1, -1)
     sig = samp.comp_to_signal(i)
     for offset in range(len(target)):
         f = np.pad(sig, (offset, 0), 'constant')
