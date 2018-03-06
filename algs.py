@@ -10,11 +10,6 @@ POOL_SIZE = int(mp.cpu_count() * .5)
 # POOL_SIZE = 1
 
 
-def fourier_filtered_matching_pursuit(samp):
-    """Filter the components and then runs matching pursuit on them."""
-    pass
-
-
 def matching_pursuit2(samp):
     """
     Run matching pursuit, with time shifted signals in the dictionary.
