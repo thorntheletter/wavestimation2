@@ -61,7 +61,7 @@ def main():
             alg_result.e_list.append(eval_alg(alg_result.r_list))
 
     for alg_result in alg_res:
-        file = open(results_dir + alg_result.a_name, mode='w')
+        file = open(results_dir + alg_result.a_name + '.txt', mode='w')
         file.write(alg_result.__repr__())
         file.close()
 

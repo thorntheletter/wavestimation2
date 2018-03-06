@@ -2,10 +2,56 @@
 
 import numpy as np
 import multiprocessing as mp
+import scipy.signal
 
 import sample
 
 POOL_SIZE = int(mp.cpu_count() * .5)
+# POOL_SIZE = 1
+
+
+def fourier_filtered_matching_pursuit(samp):
+    """Filter the components and then runs matching pursuit on them."""
+    pass
+
+
+def matching_pursuit2(samp):
+    """
+    Run matching pursuit, with time shifted signals in the dictionary.
+
+    Imagine if I didn't forget about the convolution theorem
+    and cross correlation when it is overly relevent.
+
+    Normal test stop condition doesn't currently work
+    because of floating point errors;
+    need new one, but this is good enough to test for time
+    """
+    R = samp.get_target()
+    ret = []
+    maxinn = 1
+    while maxinn > 0:
+        print("iter: " + str(len(ret)))
+        maxinn = 0
+        maxres = (-1, -1, -1)
+        for i, s in enumerate(samp.components):
+            f = samp.get_signal(s)
+            # convolving with 2nd arg reversed is cross correlation
+            # cross correlation essentially sliding dot product
+            inners = scipy.signal.fftconvolve(R, f[::-1], 'full')[f.size - 1:]
+            offset = np.argmax(inners)
+            a = inners[offset]
+            if(np.abs(a) < maxinn):
+                continue
+            maxinn = a
+            maxres = (i, offset, a)
+
+        g = np.pad(samp.comp_to_signal(maxres[0]), (maxres[1], 0), 'constant')
+        g = g * maxres[2]
+        R = R - g
+        R = np.trim_zeros(R, 'b')
+        ret.append(maxres)
+        maxinn = 0  # replace when not just testing for time
+    return AlgResult(samp, ret)
 
 
 def matching_pursuit(samp):
@@ -28,7 +74,8 @@ def matching_pursuit(samp):
                 f, R = sample.pad(f, R)
                 a = np.inner(R, f)  # np.inner uses dot product
                 if(np.abs(a) < maxinn):
-                    next
+                    continue
+                maxinn = a
                 maxres = (i, offset, a)
 
         g = np.pad(samp.comp_to_signal(maxres[0]), (maxres[1], 0), 'constant')
@@ -44,6 +91,7 @@ def matching_pursuit_mp(samp):
     Run matching pursuit, with time shifted signals in the dictionary.
 
     Abandoned because too slow, not fully tested.
+
     """
     R = samp.get_target()
     ret = []
@@ -56,7 +104,7 @@ def matching_pursuit_mp(samp):
         p = mp.Pool(POOL_SIZE)
         processresults = p.imap(_matching_pusuit_mp_in, mp_args)
 
-        maxres = max(processresults, key=lambda x: x)
+        maxres = max(processresults, key=lambda x: x[2])
         g = np.pad(samp.comp_to_signal(maxres[0]), (maxres[1], 0), 'constant')
         g = g * maxres[2]
         R, g = sample.pad(R, g)
@@ -75,7 +123,8 @@ def _matching_pusuit_mp_in(args):
         f, R = sample.pad(f, target)
         a = np.inner(R, f)  # np.inner uses dot product
         if(np.abs(a) < maxinn):
-            next
+            continue
+        maxinn = a
         maxres = (i, offset, a)
 
     return maxres
@@ -91,7 +140,7 @@ def testo2(samp):
     return AlgResult(samp, "not as good result")
 
 
-algorithm_list = [matching_pursuit_mp]
+algorithm_list = [matching_pursuit2]
 
 
 class AlgResult(sample.Sample):

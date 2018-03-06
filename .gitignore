@@ -1,6 +1,7 @@
 # Project specific files
 data/
 results/
+saved/
 wavestimation.sublime-workspace
 notes.txt
 
