@@ -81,6 +81,7 @@ def collapse_channels(data):
 
 def normalize(vector):
     """Normalize a vector into a unit vector."""
+    vector = np.trim_zeros(vector)
     if np.linalg.norm(vector) >= 0:
         return vector / np.linalg.norm(vector)
     return vector

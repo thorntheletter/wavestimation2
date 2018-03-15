@@ -43,7 +43,7 @@ def e_testo_jr(results):
     return EvalResult("e_testo_jr", results.__repr__() + "eval is meh")
 
 
-eval_list = [MSE_L2_time, MSE_L1_time]
+eval_list = [MSE_L2_time]
 
 
 class EvalResult():

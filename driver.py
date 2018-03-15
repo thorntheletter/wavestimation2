@@ -11,7 +11,7 @@ import algs
 import evals
 
 DEFAULT_FILENAME = "data/masterlist.json"
-VERBOSE = False
+VERBOSE = True
 
 
 def main():
@@ -32,6 +32,9 @@ def main():
     os.makedirs(results_dir)
     results_dir += "/"
 
+    if VERBOSE:
+        print("Loading Data")
+
     if len(sys.argv) != 1:
         samples = []
         for arg in sys.argv[1:]:
@@ -50,15 +53,24 @@ def main():
             print(e)
             sys.exit(1)
 
+    if VERBOSE:
+        print("Running Estimation Algorithms")
+
     alg_res = []
     for alg in algs.algorithm_list:
         a_results = algs.AlgResultList(alg.__name__)
         a_results.r_list = list(map(alg, samples))
         alg_res.append(a_results)
 
+    if VERBOSE:
+        print("Running Evaluation algorithms")
+
     for eval_alg in evals.eval_list:
         for alg_result in alg_res:
             alg_result.e_list.append(eval_alg(alg_result.r_list))
+
+    if VERBOSE:
+        print("Preparing Results")
 
     for alg_result in alg_res:
         file = open(results_dir + alg_result.a_name + '.txt', mode='w')

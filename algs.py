@@ -24,7 +24,8 @@ def matching_pursuit2(samp):
     R = samp.get_target()
     ret = []
     maxinn = 1
-    while maxinn > 0:
+    itt = 1
+    while maxinn > 0 and itt <= 1:
         print("iter: " + str(len(ret)))
         maxinn = 0
         maxres = (-1, -1, -1)
@@ -33,19 +34,22 @@ def matching_pursuit2(samp):
             # convolving with 2nd arg reversed is cross correlation
             # cross correlation essentially sliding dot product
             inners = scipy.signal.fftconvolve(R, f[::-1], 'full')[f.size - 1:]
-            offset = np.argmax(inners)
+            print(inners)
+            offset = np.argmax(np.abs(inners))
             a = inners[offset]
-            if(np.abs(a) < maxinn):
+            if np.abs(a) < np.abs(maxinn):
                 continue
             maxinn = a
             maxres = (i, offset, a)
 
         g = np.pad(samp.comp_to_signal(maxres[0]), (maxres[1], 0), 'constant')
         g = g * maxres[2]
+        R, g = sample.pad(R, g)
         R = R - g
         R = np.trim_zeros(R, 'b')
         ret.append(maxres)
-        maxinn = 0  # replace when not just testing for time
+        # maxinn = 0  # replace when not just testing for time
+        itt += 1
     return AlgResult(samp, ret)
 
 
@@ -75,6 +79,7 @@ def matching_pursuit(samp):
 
         g = np.pad(samp.comp_to_signal(maxres[0]), (maxres[1], 0), 'constant')
         g = g * maxres[2]
+        g, R = sample.pad(g, R)
         R = R - g
         R = np.trim_zeros(R, 'b')
         ret.append(maxres)
