@@ -8,6 +8,58 @@ import sample
 import config
 
 
+def matching_pursuit2_mp(samp):
+    """
+    Run matching pursuit, with time shifted signals in the dictionary.
+
+    Convolution again, but this time multiprocess because I am impatient.
+    """
+    if config.VERBOSE:
+        print("Matching Pursuit on " + samp.s_name)
+
+    if config.PLOT:
+        plotfile = open(config.RESULTS_DIR +
+                        "matching_pursuit2-" +
+                        samp.s_name +
+                        ".txt", 'w')
+
+    R = samp.get_target()
+    ret = []
+    maxinn = 1
+    itt = 1
+    while np.abs(maxinn) > 0 and itt <= config.N_SIGNALS:
+        if config.VERBOSE:
+            print("\tChoosing Signal " + str(itt))
+
+        maxinn = 0
+        mp_args = [(R, samp, i) for i in range(len(samp.components))]
+        p = mp.Pool(config.POOL_SIZE)
+        processresults = p.starmap(_matching_pusuit2_mp_in, mp_args)
+
+        maxres = max(processresults, key=lambda x: np.abs(x[2]))
+
+        g = np.pad(samp.comp_to_signal(maxres[0]), (maxres[1], 0), 'constant')
+        g = g * maxres[2]
+        R, g = sample.pad(R, g)
+        R = R - g
+        R = np.trim_zeros(R, 'b')
+        if config.PLOT:
+            plotfile.write(str(1 - np.linalg.norm(R)) + "\n")
+        ret.append(maxres)
+        itt += 1
+        maxinn = maxres[2]
+    return AlgResult(samp, ret)
+
+
+def _matching_pusuit2_mp_in(R, samp, i):
+    f = samp.comp_to_signal(i)
+    inners = scipy.signal.fftconvolve(R, f[::-1], 'full')[f.size - 1:]
+    offset = np.argmax(np.abs(inners))
+    a = inners[offset]
+
+    return (i, offset, a)
+
+
 def matching_pursuit2(samp):
     """
     Run matching pursuit, with time shifted signals in the dictionary.
@@ -57,11 +109,9 @@ def matching_pursuit2(samp):
         R = np.trim_zeros(R, 'b')
         if config.PLOT:
             plotfile.write(str(1 - np.linalg.norm(R)) + "\n")
-        ret.append(maxres)
-        # maxinn = 0  # replace when not just testing for time
-        itt += 1
 
-    print(maxinn, itt, config.N_SIGNALS)
+        ret.append(maxres)
+        itt += 1
     return AlgResult(samp, ret)
 
 
@@ -152,7 +202,7 @@ def testo2(samp):
     return AlgResult(samp, "not as good result")
 
 
-algorithm_list = [matching_pursuit2]
+algorithm_list = [matching_pursuit2_mp]
 
 
 class AlgResult(sample.Sample):
