@@ -9,9 +9,7 @@ import time
 import sample
 import algs
 import evals
-
-DEFAULT_FILENAME = "data/masterlist.json"
-VERBOSE = True
+import config
 
 
 def main():
@@ -28,11 +26,11 @@ def main():
     Results go in a directory in the results named after the current time.
 
     """
-    results_dir = "results/" + time.strftime("%Y-%m-%d-%H:%M:%S")
-    os.makedirs(results_dir)
-    results_dir += "/"
+    config.RESULTS_DIR = "results/" + time.strftime("%Y-%m-%d-%H:%M:%S")
+    os.makedirs(config.RESULTS_DIR)
+    config.RESULTS_DIR += "/"
 
-    if VERBOSE:
+    if config.VERBOSE:
         print("Loading Data")
 
     if len(sys.argv) != 1:
@@ -47,13 +45,13 @@ def main():
 
     else:
         try:
-            samples = sample.parse_json_file_list(DEFAULT_FILENAME)
+            samples = sample.parse_json_file_list(config.DEFAULT_FILENAME)
         except TypeError as e:
             print("error: incorrect json filename list")
             print(e)
             sys.exit(1)
 
-    if VERBOSE:
+    if config.VERBOSE:
         print("Running Estimation Algorithms")
 
     alg_res = []
@@ -62,22 +60,22 @@ def main():
         a_results.r_list = list(map(alg, samples))
         alg_res.append(a_results)
 
-    if VERBOSE:
+    if config.VERBOSE:
         print("Running Evaluation algorithms")
 
     for eval_alg in evals.eval_list:
         for alg_result in alg_res:
             alg_result.e_list.append(eval_alg(alg_result.r_list))
 
-    if VERBOSE:
+    if config.VERBOSE:
         print("Preparing Results")
 
     for alg_result in alg_res:
-        file = open(results_dir + alg_result.a_name + '.txt', mode='w')
+        file = open(config.RESULTS_DIR + alg_result.a_name + '.txt', mode='w')
         file.write(alg_result.__repr__())
         file.close()
 
-    file = open(results_dir + "results.p", mode="wb")
+    file = open(config.RESULTS_DIR + "results.p", mode="wb")
     pickle.dump(alg_res, file)
 
 

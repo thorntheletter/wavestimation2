@@ -5,9 +5,7 @@ import multiprocessing as mp
 import scipy.signal
 
 import sample
-
-POOL_SIZE = int(mp.cpu_count() * .5)
-# POOL_SIZE = 1
+import config
 
 
 def matching_pursuit2(samp):
@@ -21,12 +19,23 @@ def matching_pursuit2(samp):
     because of floating point errors;
     need new one, but this is good enough to test for time
     """
+    if config.VERBOSE:
+        print("Matching Pursuit on " + samp.s_name)
+
+    if config.PLOT:
+        plotfile = open(config.RESULTS_DIR +
+                        "matching_pursuit2-" +
+                        samp.s_name +
+                        ".txt", 'w')
+
     R = samp.get_target()
     ret = []
     maxinn = 1
     itt = 1
-    while maxinn > 0 and itt <= 1:
-        print("iter: " + str(len(ret)))
+    while np.abs(maxinn) > 0 and itt <= config.N_SIGNALS:
+        if config.VERBOSE:
+            print("\tChoosing Signal " + str(itt))
+
         maxinn = 0
         maxres = (-1, -1, -1)
         for i, s in enumerate(samp.components):
@@ -34,7 +43,6 @@ def matching_pursuit2(samp):
             # convolving with 2nd arg reversed is cross correlation
             # cross correlation essentially sliding dot product
             inners = scipy.signal.fftconvolve(R, f[::-1], 'full')[f.size - 1:]
-            print(inners)
             offset = np.argmax(np.abs(inners))
             a = inners[offset]
             if np.abs(a) < np.abs(maxinn):
@@ -47,9 +55,13 @@ def matching_pursuit2(samp):
         R, g = sample.pad(R, g)
         R = R - g
         R = np.trim_zeros(R, 'b')
+        if config.PLOT:
+            plotfile.write(str(1 - np.linalg.norm(R)) + "\n")
         ret.append(maxres)
         # maxinn = 0  # replace when not just testing for time
         itt += 1
+
+    print(maxinn, itt, config.N_SIGNALS)
     return AlgResult(samp, ret)
 
 
@@ -101,7 +113,7 @@ def matching_pursuit_mp(samp):
         maxinn = 0
         maxres = (-1, -1, -1)
         mp_args = [(R, samp, i) for i in range(len(samp.components))]
-        p = mp.Pool(POOL_SIZE)
+        p = mp.Pool(config.POOL_SIZE)
         processresults = p.imap(_matching_pusuit_mp_in, mp_args)
 
         maxres = max(processresults, key=lambda x: x[2])

@@ -5,7 +5,8 @@ import os
 import sys
 import wave
 
-FLOAT = 'float64'
+import config
+
 files_dict = {}
 
 
@@ -39,7 +40,7 @@ def parse_json_sample_file(filename):
     if 'name' in data:
         name = data['name']
     else:
-        name = filename
+        name = os.path.basename(filename).split('.')[0]
 
     if isinstance(data['target'], str):  # wav
         target = data['target']
@@ -47,7 +48,7 @@ def parse_json_sample_file(filename):
             frames = get_sound_data(target)
             files_dict[target] = frames
     else:  # array with numbers in it.
-        target = normalize(np.array(data['target'], dtype=FLOAT))
+        target = normalize(np.array(data['target'], dtype=config.FLOAT))
 
     components = []
     for i, comp in enumerate(data['components']):
@@ -57,7 +58,7 @@ def parse_json_sample_file(filename):
                 frames = get_sound_data(comp)
                 files_dict[comp] = frames
         else:
-            components.append(normalize(np.array(comp, dtype=FLOAT)))
+            components.append(normalize(np.array(comp, dtype=config.FLOAT)))
 
     return Sample(name, target, components)
 
@@ -76,7 +77,7 @@ def get_sound_data(filename):
 def collapse_channels(data):
     """Convert multi-channel audio in a numpy array to mono."""
     _, n_channels = data.shape
-    return np.sum(data / n_channels, axis=1, dtype=FLOAT)
+    return np.sum(data / n_channels, axis=1, dtype=config.FLOAT)
 
 
 def normalize(vector):
