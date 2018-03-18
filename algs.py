@@ -27,13 +27,14 @@ def matching_pursuit2_mp(samp):
     ret = []
     maxinn = 1
     itt = 1
+    p = mp.Pool(config.POOL_SIZE)
     while np.abs(maxinn) > 0 and itt <= config.N_SIGNALS:
         if config.VERBOSE:
             print("\tChoosing Signal " + str(itt))
 
         maxinn = 0
         mp_args = [(R, samp, i) for i in range(len(samp.components))]
-        p = mp.Pool(config.POOL_SIZE)
+
         processresults = p.starmap(_matching_pusuit2_mp_in, mp_args)
 
         maxres = max(processresults, key=lambda x: np.abs(x[2]))
