@@ -7,8 +7,6 @@ import wave
 
 import config
 
-files_dict = {}
-
 
 def parse_json_file_list(filename):
     """Parse JSON sample list file and returns list of samples."""
@@ -44,9 +42,9 @@ def parse_json_sample_file(filename):
 
     if isinstance(data['target'], str):  # wav
         target = data['target']
-        if target not in files_dict.keys():
+        if target not in config.F_DICT.keys():
             frames = get_sound_data(target)
-            files_dict[target] = frames
+            config.F_DICT[target] = frames
     else:  # array with numbers in it.
         target = normalize(np.array(data['target'], dtype=config.FLOAT))
 
@@ -54,9 +52,9 @@ def parse_json_sample_file(filename):
     for i, comp in enumerate(data['components']):
         if isinstance(comp, str):
             components.append(comp)
-            if comp not in files_dict.keys():
+            if comp not in config.F_DICT.keys():
                 frames = get_sound_data(comp)
-                files_dict[comp] = frames
+                config.F_DICT[comp] = frames
         else:
             components.append(normalize(np.array(comp, dtype=config.FLOAT)))
 
@@ -113,7 +111,8 @@ class Sample():
     def get_signal(self, comp):
         """Return signal from signal or filename."""
         if isinstance(comp, str):
-            return files_dict[comp]
+            # print(config.F_DICT.keys())
+            return config.F_DICT[comp]
         elif isinstance(comp, np.ndarray):
             return comp
         else:

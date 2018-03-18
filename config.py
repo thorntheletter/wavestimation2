@@ -7,3 +7,4 @@ PLOT = True
 POOL_SIZE = 4
 N_SIGNALS = 10000
 FLOAT = 'float64'
+F_DICT = {}
