@@ -13,28 +13,33 @@ import config
 
 def main():
     """Run when run as a script."""
-    _, picfile, directory = sys.argv
+    if len(sys.argv) == 3:
+        _, picfile, directory = sys.argv
+        n_waves = 0
+    elif len(sys.argv) == 4:
+        _, picfile, directory, n_waves = sys.argv
+
     pic = pickle.load(open(picfile, 'rb'))
     os.makedirs(directory, exist_ok=True)
     if directory[-1] != '/':
         directory += '/'
     for alg in pic:
         for result in alg.r_list:
-            params = process_files(result)
+            rate, m = process_files(result)
             # print(params)
-            data = scaleup_floats(result.to_signal()).astype('int16')
+            data = scaleup_floats(result.to_signal(), m).astype('int16')
             wfile = wave.open(directory +
                               alg.a_name + '-' +
                               result.s_name + '.wav',
                               'wb')
-            wfile.setparams(params)
+            wfile.setparams((1, 2, rate, 0, 'NONE', 'not compressed'))
             wfile.writeframes(data.tostring())
 
 
-def scaleup_floats(vector):
+def scaleup_floats(vector, mx):
     """Scales up a floats vector so that the max element is int16_max."""
     m = np.max(vector)
-    ratio = (2**15-1) / m
+    ratio = mx / m
     return vector * ratio
 
 
@@ -46,11 +51,14 @@ def process_files(result):
 
     if isinstance(result.target, str):
         q = wave.open(result.target)
-        r = q.getparams()
+        r = q.getframerate()
+        frames = q.readframes(q.getnframes())
+        data = np.fromstring(frames, dtype='int16')
+        m = np.max(data)
         q.close()
-        return (1, 2, r[2], 0, 'NONE', 'not compressed')
+        return (r, m)
     else:
-        return (1, 2, 44100, 0, 'NONE', 'not compressed')
+        return (44100, (2 ** 15) - 1)
 
 
 def add_dict(fname):
